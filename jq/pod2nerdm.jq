@@ -1,6 +1,17 @@
 # jq conversion script from NIST-PDL-POD to NERDm schemas
 #
-
+# To convert a single POD Dataset document, execute the following:
+#
+#   jq -L $PWD --arg id ID 'import "pod2nerdm" as nerdm; .|nerdm::podds@resouce'
+#      DSFILE
+#
+# Here, ID is the identifier that should be inserted for that record.
+#
+# To convert the full PDL catalog into an array of NERDm records, execute:
+#
+#   jq -L $PWD --arg id '' 'import "pod2nerdm" as nerdm; .|nerdm::podcat2resources' \
+#      CATFILE
+# 
 # the base NERDm JSON schema namespace
 #
 def nerdm_schema:  "https://www.nist.gov/od/dm/nerdm-schema/v0.1#";
@@ -76,17 +87,23 @@ def dist2comp:
     end
 ;
 
+# return the DOI stored in the accessURL, if it exists
+#
+def doiFromDist:
+    (map(select(.accessURL)| .accessURL | scan("https?://.*doi\\.org/.*")) | .[0]) as $auri |
+    if $auri then ($auri | sub("https?://.*doi.org/"; "doi:")) else null end
+;
+
 # Converts an entire POD Dataset node to a NERDm Resource node
 #
-def podds2resource: 
-    . as $in |
+def podds2resource:
     {
         "@context": nerdm_context,
         "$schema": nerdm_schema,
         "$extensionSchemas": [ ],
         "@type": [ "nrdp:PublishedDataResource" ],
         "@id": resid,
-        "doi": null,
+        "doi": (.distribution + []) | doiFromDist,
         title,
         contactPoint,
         issued,
@@ -108,7 +125,10 @@ def podds2resource:
         programCode
     } |
     if .references then .references = (.references | map(cvtref)) else del(.references) end |
-    if .components then .components = (.components | map(dist2comp)) else del(.components) end 
+    if .components then .components = (.components | map(dist2comp)) else del(.components) end |
+    if .doi then . else del(.doi) end |
+    if .landingPage then . else del(.landingPage) end |
+    if .issued then . else del(.issued) end 
 ;
 
 # Converts an entire POD Catalog to an array of NERDm Resource nodes
