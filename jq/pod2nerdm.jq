@@ -22,6 +22,10 @@
 #
 def nerdm_schema:  "https://www.nist.gov/od/dm/nerdm-schema/v0.1#";
 
+# the base NERDm JSON schema namespace
+#
+def nerdm_pub_schema:  "https://www.nist.gov/od/dm/nerdm-schema/pub/v0.1#";
+
 # the NERDm context location
 #
 def nerdm_context: "https://www.nist.gov/od/dm/nerdm-pub-context.jsonld";
@@ -36,6 +40,9 @@ def resid:  if $id then $id else null end;
 
 # conversion for a POD-to-NERDm reference node
 #
+# Input: a string containing the reference URL
+# Output: a DCiteDocumentReference object
+#
 def cvtref:  {
     "@type": "deo:BibliographicReference",
     "refType": "IsReferencedBy",
@@ -46,6 +53,9 @@ def cvtref:  {
 # conversion for a POD-to-NERDm distribution node.  A distribution gets converted
 # to a DataFile component
 #
+# Input: a Distribution object
+# Output: a Component object with an DataFile type given as @type
+#
 def dist2download: 
     .["@type"] = [ "nrdp:DataFile", "dcat:Distribution" ] |
     .["$extensionSchemas"] = [ "https://www.nist.gov/od/dm/nerdm-schema/pub/v0.1#/definitions/DataFile" ] 
@@ -55,6 +65,9 @@ def dist2download:
 # to a Hidden component that is not intended for external use.  (Such nodes
 # exist to preserve information for conversion back into POD.)
 #
+# Input: a Distribution object
+# Output: a Component object with an Hidden type given as @type
+#
 def dist2hidden:
     .["@type"] = [ "nrd:Hidden", "dcat:Distribution" ] 
 ;
@@ -63,12 +76,18 @@ def dist2hidden:
 # to an Inaccessible component.  This is for distributions that have neither an
 # accessURL nor a downloadURL.  
 #
+# Input: a Distribution object
+# Output: a Component object with an Inaccessible type given as @type
+#
 def dist2inaccess:
     .["@type"] = [ "nrd:Inaccessible", "dcat:Distribution" ]
 ;
 
 # conversion for a POD-to-NERDm distribution node.  A distribution gets converted
 # to a generic AccessPage component.  
+#
+# Input: a Distribution object
+# Output: a Component object with an AccessPage type given as @type
 #
 def dist2accesspage:
     .["@type"] = [ "nrd:AccessPage", "dcat:Distribution" ]
@@ -77,6 +96,9 @@ def dist2accesspage:
 # conversion for a POD-to-NERDm distribution node.  A distribution gets converted
 # to a component of particular types depending on the input data.  See other
 # dist2* macros
+#
+# Input: a Distribution object
+# Output: a Component object with the detected types given in @type
 #
 def dist2comp: 
     if .downloadURL then
@@ -93,7 +115,11 @@ def dist2comp:
     end
 ;
 
-# return the DOI stored in the accessURL, if it exists
+# return the DOI stored in the accessURL, if it exists.  null is returned, if
+# none is found.
+#
+# Input: a Distribution object
+# Output:  string: A DOI in in the form of "doi:..."
 #
 def doiFromDist:
     (map(select(.accessURL)| .accessURL | scan("https?://.*doi\\.org/.*")) | .[0]) as $auri |
@@ -106,7 +132,7 @@ def podds2resource:
     {
         "@context": nerdm_context,
         "$schema": nerdm_schema,
-        "$extensionSchemas": [ ],
+        "$extensionSchemas": [ nerdm_pub_schema + "/definitions/PublishedDataResources" ],
         "@type": [ "nrdp:PublishedDataResource" ],
         "@id": resid,
         "doi": (.distribution + []) | doiFromDist,
