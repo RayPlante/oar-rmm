@@ -1,17 +1,23 @@
-# jq conversion script from NIST-PDL-POD to NERDm schemas
+# jq conversion library from NIST-PDL-POD to NERDm schemas
 #
 # To convert a single POD Dataset document, execute the following:
 #
-#   jq -L $PWD --arg id ID 'import "pod2nerdm" as nerdm; .|nerdm::podds@resouce'
-#      DSFILE
+#   jq -L $JQLIB --arg id ID \
+#      'import "pod2nerdm" as nerdm; .|nerdm::podds2resource' DSFILE
 #
-# Here, ID is the identifier that should be inserted for that record.
+# Here, JQLIB is the directory containing this library, ID is the identifier
+# that should be assigned for that record, and DSFILE is a file containing a
+# POD Dataset object.
 #
 # To convert the full PDL catalog into an array of NERDm records, execute:
 #
-#   jq -L $PWD --arg id '' 'import "pod2nerdm" as nerdm; .|nerdm::podcat2resources' \
-#      CATFILE
-# 
+#   jq -L $JQLIB --argjson id null \
+#      'import "pod2nerdm" as nerdm; .|nerdm::podcat2resources' CATFILE
+#      
+# Here, CATFILE is the POD catalog file.  (In this example, the output records
+# are all given a null identifier.)
+
+
 # the base NERDm JSON schema namespace
 #
 def nerdm_schema:  "https://www.nist.gov/od/dm/nerdm-schema/v0.1#";
