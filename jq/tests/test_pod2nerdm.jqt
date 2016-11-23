@@ -1,0 +1,67 @@
+# Tests for the pod2nerdm library
+#
+# To run, execute:
+#
+#  jq --run-tests test_pod2nerdm.jqt
+#
+
+#--------------
+# testing nerdm_schema()
+#
+include "pod2nerdm"; nerdm_schema
+null
+"https://www.nist.gov/od/dm/nerdm-schema/v0.1#"
+
+#--------------
+# testing nerdm_context()
+#
+include "pod2nerdm"; nerdm_context
+null
+"https://www.nist.gov/od/dm/nerdm-pub-context.jsonld"
+
+#--------------
+# testing dciteRefType()
+#
+include "pod2nerdm"; dciteRefType
+null
+"https://www.nist.gov/od/dm/nerdm-schema/v0.1#/definitions/DCiteDocumentReference"
+
+#--------------
+# testing resid()
+#
+# Note that in subsequent tests, we need to override the definition of resid
+# because --arg does not work with --run-tests and variables are lexically
+# scoped.  
+#
+include "pod2nerdm"; def resid: "ID"; resid
+null
+"ID"
+
+#--------------
+# testing cvtref()
+#
+include "pod2nerdm"; map(cvtref)
+[ "http://goob.net/doc1.txt", "https://goob.gov/doc2.txt" ]
+[{ "@type": "deo:BibliographicReference", "refType": "IsReferencedBy", "$extensionSchemas": [ "https://www.nist.gov/od/dm/nerdm-schema/v0.1#/definitions/DCiteDocumentReference" ], "location": "http://goob.net/doc1.txt"}, { "@type": "deo:BibliographicReference", "refType": "IsReferencedBy", "$extensionSchemas": [ "https://www.nist.gov/od/dm/nerdm-schema/v0.1#/definitions/DCiteDocumentReference" ], "location": "https://goob.gov/doc2.txt"}]
+
+#--------------
+# testing dist2download()
+#
+include "pod2nerdm"; dist2download
+{"describedBy": "http://www.nist.gov/srd/srd_data/srd13_janaf-data-defs.json", "downloadURL": "http://www.nist.gov/srd/srd_data/srd13_B-101.json", "mediaType": "application/json","title": "Titanium Boride" }
+{"describedBy": "http://www.nist.gov/srd/srd_data/srd13_janaf-data-defs.json", "downloadURL": "http://www.nist.gov/srd/srd_data/srd13_B-101.json","mediaType": "application/json", "title": "Titanium Boride", "@type": ["nrdp:DataFile","dcat:Distribution"],"$extensionSchemas": ["https://www.nist.gov/od/dm/nerdm-schema/pub/v0.1#/definitions/DataFile"]}
+
+#--------------
+# testing dist2download()
+#
+include "pod2nerdm"; dist2hidden
+{"accessURL": "https://doi.org/10.18434/T42C7D","title": "A Library to Enable the Modeling of Optical Imaging of Finite Multi-Line Arrays"}
+{"accessURL": "https://doi.org/10.18434/T42C7D","title": "A Library to Enable the Modeling of Optical Imaging of Finite Multi-Line Arrays","@type": [ "nrd:Hidden", "dcat:Distribution" ]}
+
+#--------------
+# testing dist2inaccess()
+#
+include "pod2nerdm"; dist2inaccess
+{"accessURL": "https://doi.org/10.18434/T42C7D","title": "A Library to Enable the Modeling of Optical Imaging of Finite Multi-Line Arrays"}
+{"accessURL": "https://doi.org/10.18434/T42C7D","title": "A Library to Enable the Modeling of Optical Imaging of Finite Multi-Line Arrays","@type": [ "nrd:Inaccessible", "dcat:Distribution" ]}
+
